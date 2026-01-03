@@ -43,11 +43,22 @@ kubectl apply -f monitoring/
 2. Configure credentials: `docker-hub`, `kubeconfig`
 3. Create pipeline job using `Jenkinsfile`
 
-## Monitoring
+## Local Development Endpoints
 
+### Application URLs
+- **Main Website**: http://localhost:8080
+- **Submit Form**: http://localhost:8080/submit (POST)
+- **Health Check**: http://localhost:8080/health
+- **H2 Database Console**: http://localhost:8080/h2-console
+  - JDBC URL: `jdbc:h2:mem:testdb`
+  - Username: `sa`
+  - Password: (leave empty)
+
+### Monitoring URLs
 - **Prometheus**: http://localhost:9090
 - **Grafana**: http://localhost:3000 (admin/admin)
 - **App Metrics**: http://localhost:8080/actuator/prometheus
+- **Spring Boot Actuator**: http://localhost:8080/actuator/health
 
 ## Pipeline Stages
 
@@ -61,7 +72,15 @@ kubectl apply -f monitoring/
 
 ## Endpoints
 
-- `/` - Application home
-- `/health` - Health check
-- `/actuator/health` - Spring Boot health
-- `/actuator/prometheus` - Metrics for Prometheus
+### Web Application
+- `/` - Dynamic website with form and message display
+- `/submit` - Form submission endpoint (POST)
+- `/health` - Simple health check
+
+### Database Access
+- `/h2-console` - H2 database web console (local only)
+
+### Spring Boot Actuator
+- `/actuator/health` - Detailed health information
+- `/actuator/prometheus` - Metrics for Prometheus monitoring
+- `/actuator/info` - Application information

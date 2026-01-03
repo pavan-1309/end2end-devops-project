@@ -1,8 +1,8 @@
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:11-jre-alpine
 
 WORKDIR /app
 
-COPY target/devops-app-1.0.0.jar app.jar
+COPY devops-app-1.0.0.jar app.jar
 
 EXPOSE 8080
 
