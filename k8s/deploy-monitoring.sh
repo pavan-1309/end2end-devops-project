@@ -11,22 +11,62 @@ echo "📦 Adding Helm repositories..."
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 
-# Install Prometheus Stack in monitoring namespace
+# Install Prometheus Stack with minimal configuration
 echo "📊 Installing Prometheus Stack..."
 helm upgrade --install prometheus-stack prometheus-community/kube-prometheus-stack \
   --namespace monitoring \
-  --values k8s/helm/prometheus-values.yaml \
+  --set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=5Gi \
+  --set grafana.persistence.enabled=false \
+  --set alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.resources.requests.storage=2Gi \
+  --timeout 10m \
   --wait
 
-# Wait for pods to be ready
-echo "⏳ Waiting for monitoring stack to be ready..."
-kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=prometheus --namespace monitoring --timeout=300s
-kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=grafana --namespace monitoring --timeout=300s
-
-# Get service URLs
-echo "🔗 Getting service URLs..."
-echo "Prometheus: kubectl port-forward -n monitoring svc/prometheus-stack-kube-prom-prometheus 9090:9090"
-echo "Grafana: kubectl port-forward -n monitoring svc/prometheus-stack-grafana 3000:80"
-echo "AlertManager: kubectl port-forward -n monitoring svc/prometheus-stack-kube-prom-alertmanager 9093:9093"
-
-echo "✅ Monitoring stack deployed successfully!"
+if [ $? -eq 0 ]; then
+    echo "✅ Monitoring stack deployed successfully!"
+    
+    # Get service URLs
+    echo "🔗 Getting service URLs..."
+    echo "Prometheus: kubectl port-forward -n monitoring svc/prometheus-stack-kube-prom-prometheus 9090:9090"
+    echo "Grafana: kubectl port-forward -n monitoring svc/prometheus-stack-grafana 3000:80"
+    echo "AlertManager: kubectl port-forward -n monitoring svc/prometheus-stack-kube-prom-alertmanager 9093:9093"
+else
+    echo "❌ Monitoring stack deployment failed, installing basic Prometheus..."
+    
+    # Fallback to basic Prometheus
+    kubectl apply -f - <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        ports:
+        - containerPort: 9090
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - port: 9090
+    targetPort: 9090
+EOF
+    
+    echo "✅ Basic Prometheus deployed!"
+fi
