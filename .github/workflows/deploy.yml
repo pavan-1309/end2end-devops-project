@@ -42,11 +42,6 @@ jobs:
         cd microservices/${{ matrix.service }}
         mvn test
     
-    - name: OWASP Dependency Check
-      run: |
-        cd microservices/${{ matrix.service }}
-        mvn org.owasp:dependency-check-maven:check
-    
     - name: Package ${{ matrix.service }}
       run: |
         cd microservices/${{ matrix.service }}

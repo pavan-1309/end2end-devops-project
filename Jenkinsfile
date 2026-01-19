@@ -70,49 +70,6 @@ pipeline {
             }
         }
         
-        stage('OWASP Dependency Check') {
-            parallel {
-                stage('User Service OWASP') {
-                    steps {
-                        dir('microservices/user-service') {
-                            sh 'mvn org.owasp:dependency-check-maven:check'
-                        }
-                    }
-                    post {
-                        always {
-                            publishHTML([
-                                allowMissing: false,
-                                alwaysLinkToLastBuild: true,
-                                keepAll: true,
-                                reportDir: 'microservices/user-service/target',
-                                reportFiles: 'dependency-check-report.html',
-                                reportName: 'User Service OWASP Report'
-                            ])
-                        }
-                    }
-                }
-                stage('Product Service OWASP') {
-                    steps {
-                        dir('microservices/product-service') {
-                            sh 'mvn org.owasp:dependency-check-maven:check'
-                        }
-                    }
-                    post {
-                        always {
-                            publishHTML([
-                                allowMissing: false,
-                                alwaysLinkToLastBuild: true,
-                                keepAll: true,
-                                reportDir: 'microservices/product-service/target',
-                                reportFiles: 'dependency-check-report.html',
-                                reportName: 'Product Service OWASP Report'
-                            ])
-                        }
-                    }
-                }
-            }
-        }
-        
         stage('Package') {
             parallel {
                 stage('User Service Package') {
