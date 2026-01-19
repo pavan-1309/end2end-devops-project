@@ -51,6 +51,12 @@ jobs:
       run: |
         cd microservices/${{ matrix.service }}
         mvn package -DskipTests
+    
+    - name: Upload JAR artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.service }}-jar
+        path: microservices/${{ matrix.service }}/target/*.jar
 
   docker-build:
     needs: build-and-test
@@ -61,6 +67,20 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
+    
+    - name: Download JAR artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+    
+    - name: Copy JARs to correct locations
+      run: |
+        mkdir -p microservices/user-service/target
+        mkdir -p microservices/product-service/target
+        mkdir -p microservices/api-gateway/target
+        cp artifacts/user-service-jar/*.jar microservices/user-service/target/ || true
+        cp artifacts/product-service-jar/*.jar microservices/product-service/target/ || true
+        cp artifacts/api-gateway-jar/*.jar microservices/api-gateway/target/ || true
     
     - name: Set up JDK 11 (for Java services)
       if: matrix.service != 'frontend'
@@ -159,6 +179,11 @@ jobs:
     
     - name: Run Integration Tests
       run: |
+        # Download all artifacts first
+        mkdir -p microservices/user-service/target
+        mkdir -p microservices/product-service/target
+        mkdir -p microservices/api-gateway/target
+        
         chmod +x ci-cd/integration-tests.sh
         ./ci-cd/integration-tests.sh
     
