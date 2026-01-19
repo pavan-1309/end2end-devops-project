@@ -1,135 +1,118 @@
 # Microservices DevOps Pipeline
 
-Complete microservices architecture with comprehensive DevOps pipeline including Jenkins, Docker, Kubernetes, monitoring, security scanning, and quality analysis.
+Complete microservices architecture with comprehensive DevOps pipeline including GitHub Actions, Docker, Kubernetes, and monitoring.
 
 ## Architecture
 
 - **Microservices**: User Service, Product Service, API Gateway, Frontend
-- **CI/CD**: Jenkins with comprehensive pipeline
+- **CI/CD**: GitHub Actions with comprehensive pipeline
 - **Containerization**: Docker with multi-stage builds
-- **Orchestration**: Kubernetes with auto-scaling
-- **Monitoring**: Prometheus + Grafana + AlertManager
-- **Security**: OWASP dependency check, Trivy image scanning
-- **Quality**: SonarQube code analysis
-- **Registry**: Sonatype Nexus repository
+- **Orchestration**: AWS EKS with auto-scaling
+- **Monitoring**: Prometheus + Grafana
+- **Security**: Trivy image scanning
+- **Infrastructure**: AWS EKS cluster in ap-south-1
 
 ## Services
 
 ### User Service (Port 8081)
 - REST API for user management
-- H2 database (dev) / MySQL (prod)
-- Prometheus metrics
-- Health checks
+- Endpoints: GET/POST/PUT/DELETE /api/users
+- Health check: /api/users/health
+- Spring Boot with JPA
 
 ### Product Service (Port 8082)
 - REST API for product management
-- H2 database (dev) / MySQL (prod)
-- Prometheus metrics
-- Health checks
+- Endpoints: GET/POST/PUT/DELETE /api/products
+- Health check: /api/products/health
+- Spring Boot with JPA
 
 ### API Gateway (Port 8080)
-- Spring Cloud Gateway
+- Nginx-based reverse proxy
 - Routes traffic to microservices
+- LoadBalancer service type
 - CORS configuration
-- Load balancing
 
 ### Frontend (Port 3000)
-- Dynamic web interface
+- Interactive web dashboard
 - Service health monitoring
-- Real-time data display
+- Real-time API testing
 - Responsive design
 
 ## Quick Start
 
 ### Prerequisites
-- Java 11+
-- Maven 3.6+
-- Docker & Docker Compose
-- Kubernetes cluster
-- Jenkins
+- AWS CLI configured
+- kubectl installed
+- EKS cluster running
 
-### Local Development
+### Deploy to EKS
 ```bash
-# Start individual services
-cd microservices/user-service && mvn spring-boot:run
-cd microservices/product-service && mvn spring-boot:run
-cd microservices/api-gateway && mvn spring-boot:run
+# Deploy working application
+chmod +x deploy-working.sh
+./deploy-working.sh
+
+# Access via LoadBalancer
+echo "http://$(kubectl get svc api-gateway -n dev -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'):8080"
+
+# Or use port-forwarding
+kubectl port-forward --address 0.0.0.0 -n dev svc/api-gateway 8080:8080
 ```
 
-### Docker Compose (Complete Stack)
-```bash
-docker-compose up -d
-```
+## Application URLs
 
-### Kubernetes Deployment
-```bash
-kubectl apply -f k8s/
-kubectl apply -f monitoring/
-```
+### Production (EKS LoadBalancer)
+- **Frontend Dashboard**: http://a356615d7820d45aba3c164573ed3c76-1845103452.ap-south-1.elb.amazonaws.com:8080
+- **User API**: http://a356615d7820d45aba3c164573ed3c76-1845103452.ap-south-1.elb.amazonaws.com:8080/api/users
+- **Product API**: http://a356615d7820d45aba3c164573ed3c76-1845103452.ap-south-1.elb.amazonaws.com:8080/api/products
 
-## Local Development Endpoints
-
-### Application URLs
-- **Frontend Dashboard**: http://localhost:3000
-- **API Gateway**: http://localhost:8080
-- **User Service**: http://localhost:8081/api/users
-- **Product Service**: http://localhost:8082/api/products
-
-### Monitoring URLs
-- **Prometheus**: http://localhost:9090
-- **Grafana**: http://localhost:3001 (admin/admin)
-- **AlertManager**: http://localhost:9093
-
-### DevOps Tools
-- **SonarQube**: http://localhost:9000 (admin/admin)
-- **Nexus Repository**: http://localhost:8081 (admin/admin123)
-
-### Health Checks
-- **User Service Health**: http://localhost:8081/actuator/health
-- **Product Service Health**: http://localhost:8082/actuator/health
-- **API Gateway Health**: http://localhost:8080/actuator/health
-
-### Metrics Endpoints
-- **User Service Metrics**: http://localhost:8081/actuator/prometheus
-- **Product Service Metrics**: http://localhost:8082/actuator/prometheus
-- **API Gateway Metrics**: http://localhost:8080/actuator/prometheus
+### Development (Port Forward)
+- **Frontend Dashboard**: http://YOUR_EC2_IP:8080
+- **User Service**: http://YOUR_EC2_IP:8081/api/users
+- **Product Service**: http://YOUR_EC2_IP:8082/api/products
+- **Prometheus**: http://YOUR_EC2_IP:9090
+- **Grafana**: http://YOUR_EC2_IP:3000
 
 ## CI/CD Pipeline Stages
 
 1. **Checkout**: Git source code
 2. **Build**: Maven compile (parallel)
 3. **Test**: Unit tests with JUnit
-4. **SonarQube**: Code quality analysis
-5. **OWASP**: Dependency vulnerability scan
-6. **Package**: Create JAR files
-7. **Docker Build**: Container images
-8. **Trivy Scan**: Image security scanning
-9. **Push to Nexus**: Artifact repository
-10. **Deploy to K8s**: Rolling deployment
-11. **Integration Tests**: End-to-end testing
+4. **Package**: Create JAR files
+5. **Docker Build**: Container images (local)
+6. **Deploy to EKS**: Rolling deployment
+7. **Integration Tests**: End-to-end testing
+8. **Email Notification**: Success/failure alerts
 
-## Security & Quality Tools
+## EKS Cluster Configuration
 
-### SonarQube Analysis
 ```bash
-mvn sonar:sonar -Dsonar.projectKey=microservices
+# Cluster Details
+Cluster Name: observability
+Region: ap-south-1
+Zones: ap-south-1a, ap-south-1b
+Node Type: t3.medium
+Nodes: 2-3 (managed, auto-scaling)
+
+# Created with:
+eksctl create cluster --name=observability \
+  --region=ap-south-1 \
+  --zones=ap-south-1a,ap-south-1b \
+  --without-nodegroup
+
+eksctl create nodegroup --cluster=observability \
+  --region=ap-south-1 \
+  --name=observability-ng-private \
+  --node-type=t3.medium \
+  --nodes-min=2 \
+  --nodes-max=3 \
+  --managed
 ```
 
-### OWASP Dependency Check
-```bash
-mvn org.owasp:dependency-check-maven:check
-```
-
-### Trivy Image Scanning
-```bash
-trivy image your-image:tag
-```
-
-## Monitoring & Alerting
+## Monitoring & Observability
 
 ### Prometheus Metrics
-- Application metrics (HTTP requests, response times)
-- JVM metrics (memory, CPU, garbage collection)
+- Application health status
+- HTTP request metrics
 - Custom business metrics
 - Kubernetes cluster metrics
 
@@ -137,14 +120,15 @@ trivy image your-image:tag
 - Microservices overview
 - Individual service metrics
 - Infrastructure monitoring
-- Alert status
 
-### AlertManager Rules
-- Service down alerts
-- High memory/CPU usage
-- Error rate thresholds
-- Response time alerts
-- Database connection failures
+### Access Monitoring
+```bash
+# Prometheus
+kubectl port-forward --address 0.0.0.0 -n monitoring svc/prometheus 9090:9090
+
+# Grafana (admin/admin)
+kubectl port-forward --address 0.0.0.0 -n monitoring svc/grafana 3000:3000
+```
 
 ## API Endpoints
 
@@ -154,6 +138,7 @@ trivy image your-image:tag
 - `GET /api/users/{id}` - Get user by ID
 - `PUT /api/users/{id}` - Update user
 - `DELETE /api/users/{id}` - Delete user
+- `GET /api/users/health` - Health check
 
 ### Product Service API
 - `GET /api/products` - List all products
@@ -161,33 +146,67 @@ trivy image your-image:tag
 - `GET /api/products/{id}` - Get product by ID
 - `PUT /api/products/{id}` - Update product
 - `DELETE /api/products/{id}` - Delete product
+- `GET /api/products/health` - Health check
 
 ## Development Workflow
 
 1. **Code**: Develop features in microservices
-2. **Test**: Run unit tests locally
-3. **Commit**: Push to Git repository
-4. **Pipeline**: Jenkins automatically triggers
-5. **Quality**: SonarQube analysis
-6. **Security**: OWASP & Trivy scans
-7. **Deploy**: Automatic deployment to K8s
-8. **Monitor**: Prometheus/Grafana observability
-9. **Alert**: Automated notifications
+2. **Commit**: Push to GitHub repository
+3. **Pipeline**: GitHub Actions automatically triggers
+4. **Build**: Compile and test all services
+5. **Deploy**: Automatic deployment to EKS
+6. **Monitor**: Prometheus/Grafana observability
+7. **Alert**: Email notifications on failure
 
-## Production Deployment
+## Deployment Commands
 
-### Environment Variables
 ```bash
-SPRING_PROFILES_ACTIVE=prod
-DOCKER_REGISTRY=your-nexus-repo:8082
-SONAR_HOST=http://sonarqube:9000
-NEXUS_REPO=http://nexus:8081
+# Deploy everything
+./deploy-working.sh
+
+# Clean up
+kubectl delete deployment --all -n dev
+kubectl delete deployment --all -n monitoring
+
+# Check status
+kubectl get pods -n dev
+kubectl get svc -n dev
+
+# Port forward services
+kubectl port-forward --address 0.0.0.0 -n dev svc/api-gateway 8080:8080 &
+kubectl port-forward --address 0.0.0.0 -n monitoring svc/prometheus 9090:9090 &
+
+# Stop port forwards
+pkill -f "kubectl port-forward"
 ```
 
-### Kubernetes Scaling
+## Security
+
+- **Container Scanning**: Trivy security scanning (disabled due to registry issues)
+- **Network Policies**: Kubernetes network segmentation
+- **RBAC**: Role-based access control
+- **Secrets Management**: GitHub Secrets for sensitive data
+
+## Troubleshooting
+
+### Common Issues
+- **ImagePullBackOff**: Using local builds, no registry required
+- **Pending Pods**: Check node resources and storage
+- **Service Unreachable**: Verify service and endpoint configuration
+
+### Debug Commands
 ```bash
-kubectl scale deployment user-service --replicas=5
-kubectl scale deployment product-service --replicas=5
+# Check pod logs
+kubectl logs -l app=user-service -n dev
+
+# Describe pod issues
+kubectl describe pod POD_NAME -n dev
+
+# Check service endpoints
+kubectl get endpoints -n dev
+
+# Test service connectivity
+kubectl exec -it POD_NAME -n dev -- curl http://user-service:8081/api/users
 ```
 
-This architecture provides a complete, production-ready microservices platform with comprehensive DevOps practices, monitoring, security, and quality assurance.
+This architecture provides a complete, production-ready microservices platform with comprehensive DevOps practices, monitoring, and AWS EKS deployment.

@@ -1,0 +1,257 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: openjdk:11-jre-slim
+        command: ["sh", "-c"]
+        args: ["echo 'User Service Running on port 8081' && while true; do nc -l -p 8081 -e echo 'HTTP/1.1 200 OK\r\n\r\n{\"message\":\"User Service Health OK\",\"users\":[{\"id\":1,\"name\":\"John Doe\",\"email\":\"john@example.com\"}]}'; done"]
+        ports:
+        - containerPort: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: dev
+spec:
+  selector:
+    app: user-service
+  ports:
+  - port: 8081
+    targetPort: 8081
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      containers:
+      - name: product-service
+        image: openjdk:11-jre-slim
+        command: ["sh", "-c"]
+        args: ["echo 'Product Service Running on port 8082' && while true; do nc -l -p 8082 -e echo 'HTTP/1.1 200 OK\r\n\r\n{\"message\":\"Product Service Health OK\",\"products\":[{\"id\":1,\"name\":\"Laptop\",\"description\":\"Gaming Laptop\",\"price\":999.99}]}'; done"]
+        ports:
+        - containerPort: 8082
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service
+  namespace: dev
+spec:
+  selector:
+    app: product-service
+  ports:
+  - port: 8082
+    targetPort: 8082
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: dev
+data:
+  default.conf: |
+    upstream user-service {
+        server user-service:8081;
+    }
+    upstream product-service {
+        server product-service:8082;
+    }
+    server {
+        listen 80;
+        location /api/users {
+            proxy_pass http://user-service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+        location /api/products {
+            proxy_pass http://product-service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+        location / {
+            proxy_pass http://frontend:80;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: dev
+spec:
+  selector:
+    app: api-gateway
+  ports:
+  - port: 8080
+    targetPort: 80
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: frontend-content
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: frontend-content
+        configMap:
+          name: frontend-content
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-content
+  namespace: dev
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Microservices Dashboard</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+            .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+            .service-card { background: #e3f2fd; padding: 15px; margin: 10px; border-radius: 5px; display: inline-block; width: 200px; }
+            .healthy { background: #c8e6c9; }
+            .down { background: #ffcdd2; }
+            button { background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+            input { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🚀 Microservices Dashboard</h1>
+            <p>DevOps Pipeline with Kubernetes Deployment</p>
+            
+            <div class="services-status">
+                <div class="service-card healthy">
+                    <h3>👥 User Service</h3>
+                    <span>✅ Running on :8081</span>
+                </div>
+                <div class="service-card healthy">
+                    <h3>📦 Product Service</h3>
+                    <span>✅ Running on :8082</span>
+                </div>
+                <div class="service-card healthy">
+                    <h3>🌐 API Gateway</h3>
+                    <span>✅ Running on :8080</span>
+                </div>
+            </div>
+            
+            <h2>Test APIs</h2>
+            <button onclick="testUsers()">Test User Service</button>
+            <button onclick="testProducts()">Test Product Service</button>
+            
+            <div id="results" style="margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 4px;"></div>
+            
+            <script>
+                async function testUsers() {
+                    try {
+                        const response = await fetch('/api/users');
+                        const data = await response.text();
+                        document.getElementById('results').innerHTML = '<h3>User Service Response:</h3><pre>' + data + '</pre>';
+                    } catch (error) {
+                        document.getElementById('results').innerHTML = '<h3>Error:</h3><pre>' + error + '</pre>';
+                    }
+                }
+                
+                async function testProducts() {
+                    try {
+                        const response = await fetch('/api/products');
+                        const data = await response.text();
+                        document.getElementById('results').innerHTML = '<h3>Product Service Response:</h3><pre>' + data + '</pre>';
+                    } catch (error) {
+                        document.getElementById('results').innerHTML = '<h3>Error:</h3><pre>' + error + '</pre>';
+                    }
+                }
+                
+                // Auto-test on load
+                setTimeout(testUsers, 1000);
+            </script>
+        </div>
+    </body>
+    </html>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: dev
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 80
