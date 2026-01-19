@@ -21,11 +21,9 @@ spec:
     spec:
       containers:
       - name: user-service
-        image: nginx:alpine
-        command: ["/bin/sh"]
-        args: ["-c", "echo 'Microservices App' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
+        image: ${{ env.IMAGE_NAME }}/user-service:${{ github.sha }}
         ports:
-        - containerPort: 80
+        - containerPort: 8081
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: "prod"
@@ -87,11 +85,9 @@ spec:
     spec:
       containers:
       - name: product-service
-        image: nginx:alpine
-        command: ["/bin/sh"]
-        args: ["-c", "echo 'Product Service' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
+        image: ${{ env.IMAGE_NAME }}/product-service:${{ github.sha }}
         ports:
-        - containerPort: 80
+        - containerPort: 8082
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: "prod"
@@ -153,11 +149,9 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: nginx:alpine
-        command: ["/bin/sh"]
-        args: ["-c", "echo 'API Gateway' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
+        image: ${{ env.IMAGE_NAME }}/api-gateway:${{ github.sha }}
         ports:
-        - containerPort: 80
+        - containerPort: 8080
         resources:
           requests:
             memory: "256Mi"
@@ -213,9 +207,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: nginx:alpine
-        command: ["/bin/sh"]
-        args: ["-c", "echo 'Frontend App' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
+        image: ${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
         ports:
         - containerPort: 80
         resources:
