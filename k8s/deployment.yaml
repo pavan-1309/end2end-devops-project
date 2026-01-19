@@ -21,9 +21,11 @@ spec:
     spec:
       containers:
       - name: user-service
-        image: your-nexus-repo:8082/user-service:IMAGE_TAG
+        image: nginx:alpine
+        command: ["/bin/sh"]
+        args: ["-c", "echo 'Microservices App' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
         ports:
-        - containerPort: 8081
+        - containerPort: 80
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: "prod"
@@ -85,9 +87,11 @@ spec:
     spec:
       containers:
       - name: product-service
-        image: your-nexus-repo:8082/product-service:IMAGE_TAG
+        image: nginx:alpine
+        command: ["/bin/sh"]
+        args: ["-c", "echo 'Product Service' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
         ports:
-        - containerPort: 8082
+        - containerPort: 80
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: "prod"
@@ -149,9 +153,11 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: your-nexus-repo:8082/api-gateway:IMAGE_TAG
+        image: nginx:alpine
+        command: ["/bin/sh"]
+        args: ["-c", "echo 'API Gateway' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
         ports:
-        - containerPort: 8080
+        - containerPort: 80
         resources:
           requests:
             memory: "256Mi"
@@ -207,7 +213,9 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: your-nexus-repo:8082/frontend:IMAGE_TAG
+        image: nginx:alpine
+        command: ["/bin/sh"]
+        args: ["-c", "echo 'Frontend App' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
         ports:
         - containerPort: 80
         resources:
