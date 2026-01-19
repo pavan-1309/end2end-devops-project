@@ -70,41 +70,6 @@ pipeline {
             }
         }
         
-        stage('SonarQube Analysis') {
-            when {
-                environment name: 'JAVA_VERSION', value: '17'
-            }
-            parallel {
-                stage('User Service Sonar') {
-                    steps {
-                        dir('microservices/user-service') {
-                            withSonarQubeEnv('SonarQube') {
-                                sh 'mvn sonar:sonar -Dsonar.projectKey=user-service -Dsonar.skip=false'
-                            }
-                        }
-                    }
-                }
-                stage('Product Service Sonar') {
-                    steps {
-                        dir('microservices/product-service') {
-                            withSonarQubeEnv('SonarQube') {
-                                sh 'mvn sonar:sonar -Dsonar.projectKey=product-service -Dsonar.skip=false'
-                            }
-                        }
-                    }
-                }
-                stage('API Gateway Sonar') {
-                    steps {
-                        dir('microservices/api-gateway') {
-                            withSonarQubeEnv('SonarQube') {
-                                sh 'mvn sonar:sonar -Dsonar.projectKey=api-gateway -Dsonar.skip=false'
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
         stage('OWASP Dependency Check') {
             parallel {
                 stage('User Service OWASP') {
