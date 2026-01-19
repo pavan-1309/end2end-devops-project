@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microservices Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Microservices Dashboard</h1>
+            <p>Dynamic Web Application with DevOps Pipeline</p>
+        </header>
+
+        <div class="services-status">
+            <div class="service-card" id="user-service-status">
+                <h3>👥 User Service</h3>
+                <span class="status">Checking...</span>
+            </div>
+            <div class="service-card" id="product-service-status">
+                <h3>📦 Product Service</h3>
+                <span class="status">Checking...</span>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('users')">Users</button>
+            <button class="tab-button" onclick="showTab('products')">Products</button>
+        </div>
+
+        <div id="users-tab" class="tab-content active">
+            <div class="form-section">
+                <h2>Add User</h2>
+                <form id="user-form">
+                    <input type="text" id="user-name" placeholder="Name" required>
+                    <input type="email" id="user-email" placeholder="Email" required>
+                    <button type="submit">Add User</button>
+                </form>
+            </div>
+            <div class="data-section">
+                <h2>Users</h2>
+                <div id="users-list"></div>
+            </div>
+        </div>
+
+        <div id="products-tab" class="tab-content">
+            <div class="form-section">
+                <h2>Add Product</h2>
+                <form id="product-form">
+                    <input type="text" id="product-name" placeholder="Product Name" required>
+                    <input type="text" id="product-description" placeholder="Description" required>
+                    <input type="number" id="product-price" placeholder="Price" step="0.01" required>
+                    <button type="submit">Add Product</button>
+                </form>
+            </div>
+            <div class="data-section">
+                <h2>Products</h2>
+                <div id="products-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

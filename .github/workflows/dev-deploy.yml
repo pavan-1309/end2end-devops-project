@@ -1,0 +1,43 @@
+name: Dev Environment Deploy
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Configure kubectl
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG }}
+    
+    - name: Build and Deploy with Docker Compose
+      run: |
+        docker-compose up -d --build
+    
+    - name: Wait for services
+      run: |
+        sleep 60
+        curl -f http://localhost:8080/actuator/health || exit 1
+        curl -f http://localhost:8081/actuator/health || exit 1
+        curl -f http://localhost:8082/actuator/health || exit 1
+    
+    - name: Run Integration Tests
+      run: |
+        chmod +x ci-cd/integration-tests.sh
+        ./ci-cd/integration-tests.sh
+    
+    - name: Cleanup
+      if: always()
+      run: docker-compose down
